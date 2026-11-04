@@ -31,3 +31,5 @@ tr.pick td{background:#fdf3ea;font-weight:700}
 .head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .reset{flex:none;border:1px solid var(--teal);background:#fff;color:var(--teal);padding:6px 12px;border-radius:6px;font:inherit;font-size:13px;cursor:pointer}
 .reset:hover{background:var(--teal);color:#fff}
+.split{padding:1px 8px;font-size:12px;margin-left:6px}
+.parts{grid-column:1/-1;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));padding:12px;border:1px dashed var(--line);border-radius:6px}

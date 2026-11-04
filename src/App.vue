@@ -14,7 +14,7 @@ const saved = (key, init) => {
   defaults.push([r, init0])
   watch(r, v => {
     try { localStorage.setItem('calc:' + key, JSON.stringify(v)) } catch {}
-  })
+  }, { deep: true })
   return r
 }
 
@@ -28,7 +28,19 @@ const cost = saved('cost', 700)
 const price = saved('price', 1000)
 const revenue = saved('revenue', 30) // 萬
 const revYearly = saved('revYearly', false)
-const reset = () => defaults.forEach(([r, d]) => (r.value = d))
+// 營運成本分項（萬，單位同 opex）
+const OPEX_ITEMS = ['房租', '水電', '人事', '網路', '記帳', '系統服務（訂閱）', '廣告行銷', '其他']
+const opexSplit = saved('opexSplit', false)
+const opexParts = saved('opexParts', Object.fromEntries(OPEX_ITEMS.map(k => [k, 0])))
+const partsSum = () => Math.round(OPEX_ITEMS.reduce((a, k) => a + (+opexParts.value[k] || 0), 0) * 100) / 100
+const opexTotal = computed(() => (opexSplit.value ? partsSum() : +opex.value || 0))
+// 展開時若分項全空，先把原總額放進「其他」；收合時總額帶回單一欄位
+const toggleSplit = () => {
+  if (opexSplit.value) opex.value = partsSum()
+  else if (!partsSum()) opexParts.value['其他'] = +opex.value || 0
+  opexSplit.value = !opexSplit.value
+}
+const reset = () => defaults.forEach(([r, d]) => (r.value = structuredClone(d)))
 
 // 營業額與營運成本共用年／月單位（萬）
 const perYear = computed(() => (revYearly.value ? 1 : 12))
@@ -40,13 +52,14 @@ const setRevYearly = y => {
   const k = y ? 12 : 1 / 12
   revenue.value = Math.round((+revenue.value || 0) * k * 100) / 100
   opex.value = Math.round((+opex.value || 0) * k * 100) / 100
+  for (const n of OPEX_ITEMS) opexParts.value[n] = Math.round((+opexParts.value[n] || 0) * k * 100) / 100
   revYearly.value = y
 }
 
 const isM = computed(() => mode.value === 'margin')
 const invOnly = computed(() => svc.value === 'inv')
 const base = computed(() => svcFixed(year.value, svc.value))
-const F = computed(() => base.value + (+opex.value || 0) * 10000 * perYear.value)
+const F = computed(() => base.value + opexTotal.value * 10000 * perYear.value)
 const fee = computed(() => (invOnly.value ? 0 : +feePct.value / 100))
 const m = computed(() =>
   isM.value ? marginPct.value / 100 : price.value > 0 ? (price.value - cost.value) / price.value : 0
@@ -91,10 +104,6 @@ const rows = computed(() =>
           </select>
         </div>
         <div>
-          <label for="opex">營運成本（水電、房租、人事薪資）萬／{{ unit }}</label>
-          <input id="opex" v-model.number="opex" type="number" min="0" step="1">
-        </div>
-        <div>
           <label for="fee">平均交易手續費率 %</label>
           <select id="fee" v-model="feePct" :disabled="invOnly">
             <option value="2.5">2.5（國內信用卡／Apple Pay／街口）</option>
@@ -102,6 +111,19 @@ const rows = computed(() =>
             <option value="3.5">3.5（國外信用卡）</option>
             <option value="1">1（WebATM／虛擬帳號，每筆最低 15 元）</option>
           </select>
+        </div>
+        <div>
+          <label for="opex">營運成本（水電、房租、人事薪資）萬／{{ unit }}
+            <button class="reset split" @click="toggleSplit">{{ opexSplit ? '合併算' : '分開算' }}</button>
+          </label>
+          <input v-if="opexSplit" id="opex" :value="opexTotal" type="number" readonly>
+          <input v-else id="opex" v-model.number="opex" type="number" min="0" step="1">
+        </div>
+        <div v-if="opexSplit" class="grid parts">
+          <div v-for="n in OPEX_ITEMS" :key="n">
+            <label :for="'opex-' + n">{{ n }} 萬／{{ unit }}</label>
+            <input :id="'opex-' + n" v-model.number="opexParts[n]" type="number" min="0" step="0.1">
+          </div>
         </div>
       </div>
     </div>
@@ -152,14 +174,14 @@ const rows = computed(() =>
           <div class="big">{{ ntd(R) }}</div>
         </div>
         <div>
-          <h2>獲利</h2>
+          <h2>預估獲利</h2>
           <div class="big" :class="{ loss: P < 0 }">{{ signedNtd(P) }}</div>
           <p class="note">以年營業額 {{ ntd(annualRev) }}（月 {{ ntd(annualRev / 12) }}）計，<br/>每月約 {{ signedNtd(P / 12) }}</p>
         </div>
       </div>
       <div class="kv" style="margin-top:12px">
-        <div><b>每月營業額</b><span>{{ ntd(R / 12) }}</span></div>
-        <div><b>實際毛利率</b><span>{{ (m * 100).toFixed(1) }}%</span></div>
+        <div><b>每月營業額（損益兩平）</b><span>{{ ntd(R / 12) }}</span></div>
+        <div><b>毛利率</b><span>{{ (m * 100).toFixed(1) }}%</span></div>
         <div><b>年固定成本（金流發票＋營運）</b><span>{{ ntd(F) }}</span></div>
         <div><b>金流發票固定費／年</b><span>{{ ntd(base) }}</span></div>
         <div v-if="!isM"><b>需賣出件數／年</b><span>{{ units }}</span></div>
