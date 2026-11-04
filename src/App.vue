@@ -3,12 +3,15 @@ import { ref, computed, watch } from 'vue'
 import { MARGINS, breakeven, svcFixed, ntd, profit, signedNtd } from './calc.js'
 
 // 輸入值存在 localStorage；隱私模式等無法存取時退回預設值
+const defaults = []
 const saved = (key, init) => {
+  const init0 = init
   try {
     const s = localStorage.getItem('calc:' + key)
     if (s !== null) init = JSON.parse(s)
   } catch {}
   const r = ref(init)
+  defaults.push([r, init0])
   watch(r, v => {
     try { localStorage.setItem('calc:' + key, JSON.stringify(v)) } catch {}
   })
@@ -25,18 +28,25 @@ const cost = saved('cost', 700)
 const price = saved('price', 1000)
 const revenue = saved('revenue', 10) // 萬
 const revYearly = saved('revYearly', false)
-const annualRev = computed(() => (+revenue.value || 0) * 10000 * (revYearly.value ? 1 : 12))
+const reset = () => defaults.forEach(([r, d]) => (r.value = d))
+
+// 營業額與營運成本共用年／月單位（萬）
+const perYear = computed(() => (revYearly.value ? 1 : 12))
+const annualRev = computed(() => (+revenue.value || 0) * 10000 * perYear.value)
+const unit = computed(() => (revYearly.value ? '年' : '月'))
 // 切換年／月時換算數值，維持同一個營業規模
 const setRevYearly = y => {
   if (y === revYearly.value) return
-  revenue.value = Math.round((+revenue.value || 0) * (y ? 12 : 1 / 12) * 100) / 100
+  const k = y ? 12 : 1 / 12
+  revenue.value = Math.round((+revenue.value || 0) * k * 100) / 100
+  opex.value = Math.round((+opex.value || 0) * k * 100) / 100
   revYearly.value = y
 }
 
 const isM = computed(() => mode.value === 'margin')
 const invOnly = computed(() => svc.value === 'inv')
 const base = computed(() => svcFixed(year.value, svc.value))
-const F = computed(() => base.value + (+opex.value || 0) * 10000)
+const F = computed(() => base.value + (+opex.value || 0) * 10000 * perYear.value)
 const fee = computed(() => (invOnly.value ? 0 : +feePct.value / 100))
 const m = computed(() =>
   isM.value ? marginPct.value / 100 : price.value > 0 ? (price.value - cost.value) / price.value : 0
@@ -56,7 +66,10 @@ const rows = computed(() =>
 
 <template>
   <main>
-    <h1>線上金流＋電子發票：損益兩平試算</h1>
+    <div class="head">
+      <h1>線上金流＋電子發票：損益兩平試算</h1>
+      <button class="reset" @click="reset">重設為預設值</button>
+    </div>
     <p class="sub">費率依 2026/11/04 金流商公版報價單（未稅）。每筆交易都走線上金流並開立電子發票。</p>
 
     <div class="card">
@@ -78,7 +91,7 @@ const rows = computed(() =>
           </select>
         </div>
         <div>
-          <label for="opex">營運成本（水電、房租、人事薪資）萬／年</label>
+          <label for="opex">營運成本（水電、房租、人事薪資）萬／{{ unit }}</label>
           <input id="opex" v-model.number="opex" type="number" min="0" step="1">
         </div>
         <div>
@@ -126,7 +139,7 @@ const rows = computed(() =>
             <button :class="{ on: revYearly }" @click="setRevYearly(true)">年營業額</button>
             <button :class="{ on: !revYearly }" @click="setRevYearly(false)">月營業額</button>
           </div>
-          <label for="revenue">預估{{ revYearly ? '年' : '月' }}營業額（萬／{{ revYearly ? '年' : '月' }}）</label>
+          <label for="revenue">預估{{ unit }}營業額（萬／{{ unit }}）</label>
           <input id="revenue" v-model.number="revenue" type="number" min="0" step="1">
         </div>
       </div>

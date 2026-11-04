@@ -28,3 +28,6 @@ tr.pick td{background:#fdf3ea;font-weight:700}
 .cols>div+div{border-left:1px solid var(--line);padding-left:20px}
 .loss{color:#b3261e}
 @media (max-width:640px){.cols{grid-template-columns:1fr}.cols>div+div{border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:16px}}
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.reset{flex:none;border:1px solid var(--teal);background:#fff;color:var(--teal);padding:6px 12px;border-radius:6px;font:inherit;font-size:13px;cursor:pointer}
+.reset:hover{background:var(--teal);color:#fff}
