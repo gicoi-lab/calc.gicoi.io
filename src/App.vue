@@ -20,13 +20,13 @@ const saved = (key, init) => {
 
 const svc = saved('svc', 'both')
 const year = saved('year', 'y1')
-const opex = saved('opex', 60)
+const opex = saved('opex', 6)
 const feePct = saved('feePct', '2.5')
 const mode = saved('mode', 'margin')
 const marginPct = saved('marginPct', 30)
 const cost = saved('cost', 700)
 const price = saved('price', 1000)
-const revenue = saved('revenue', 10) // 萬
+const revenue = saved('revenue', 30) // 萬
 const revYearly = saved('revYearly', false)
 const reset = () => defaults.forEach(([r, d]) => (r.value = d))
 
