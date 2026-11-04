@@ -10,7 +10,7 @@ const mode = ref('margin')
 const marginPct = ref(30)
 const cost = ref(700)
 const price = ref(1000)
-const revenue = ref(1000000)
+const revenue = ref(10) // 萬／月
 
 const isM = computed(() => mode.value === 'margin')
 const invOnly = computed(() => svc.value === 'inv')
@@ -21,7 +21,7 @@ const m = computed(() =>
   isM.value ? marginPct.value / 100 : price.value > 0 ? (price.value - cost.value) / price.value : 0
 )
 const R = computed(() => breakeven(m.value, fee.value, F.value))
-const P = computed(() => profit(+revenue.value || 0, m.value, fee.value, F.value))
+const P = computed(() => profit((+revenue.value || 0) * 10000 * 12, m.value, fee.value, F.value))
 const units = computed(() =>
   isFinite(R.value) && price.value > 0 ? Math.ceil(R.value / price.value).toLocaleString() + ' 件' : '—'
 )
@@ -101,8 +101,8 @@ const rows = computed(() =>
         </div>
         <div>
           <h2>估算營業額</h2>
-          <label for="revenue">預估年營業額（元／年）</label>
-          <input id="revenue" v-model.number="revenue" type="number" min="0" step="10000">
+          <label for="revenue">預估月營業額（萬／月）</label>
+          <input id="revenue" v-model.number="revenue" type="number" min="0" step="1">
         </div>
       </div>
     </div>
@@ -116,7 +116,7 @@ const rows = computed(() =>
         <div>
           <h2>獲利</h2>
           <div class="big" :class="{ loss: P < 0 }">{{ signedNtd(P) }}</div>
-          <p class="note">以估算營業額 {{ ntd(+revenue || 0) }}／年計，每月約 {{ signedNtd(P / 12) }}</p>
+          <p class="note">以月營業額 {{ ntd((+revenue || 0) * 10000) }} 計（年 {{ ntd((+revenue || 0) * 120000) }}），每月約 {{ signedNtd(P / 12) }}</p>
         </div>
       </div>
       <div class="kv" style="margin-top:12px">
