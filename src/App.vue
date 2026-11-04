@@ -81,10 +81,10 @@ const rows = computed(() =>
 <template>
   <main>
     <div class="head">
-      <h1>線上金流＋電子發票：損益兩平試算</h1>
+      <h1 class="brand"><img src="/favicon-192.png" alt="" width="52" height="52"><span>開店損益試算<span class="colon">：</span><small>營業額要做多少才賺錢</small></span></h1>
       <button class="reset" @click="reset">重設為預設值</button>
     </div>
-    <p class="sub">費率依 2026/11/04 金流商公版報價單（未稅）。每筆交易都走線上金流並開立電子發票。</p>
+    <p class="sub">輸入營運成本、毛利率與預估營業額，算出損益平衡點與獲利。可加入線上金流與電子發票費用（費率依 2026/11/04 金流商公版報價單，未稅）。</p>
 
     <div class="card">
       <h2>固定成本</h2>
@@ -172,7 +172,7 @@ const rows = computed(() =>
     <div class="card">
       <div class="cols">
         <div>
-          <h2>目標損益兩平營業額</h2>
+          <h2>目標損益平衡營業額</h2>
           <div class="big">{{ ntd(R) }}</div>
         </div>
         <div>
@@ -182,14 +182,14 @@ const rows = computed(() =>
         </div>
       </div>
       <div class="kv" style="margin-top:12px">
-        <div><b>每月營業額（損益兩平）</b><span>{{ ntd(R / 12) }}</span></div>
+        <div><b>每月營業額（損益平衡）</b><span>{{ ntd(R / 12) }}</span></div>
         <div><b>毛利率</b><span>{{ (m * 100).toFixed(1) }}%</span></div>
         <div><b>年固定成本（金流發票＋營運）</b><span>{{ ntd(F) }}</span></div>
         <div v-if="!none"><b>金流發票固定費／年</b><span>{{ ntd(base) }}</span></div>
         <div v-if="!isM"><b>需賣出件數／年</b><span>{{ units }}</span></div>
       </div>
       <p class="note">
-        <span v-if="m <= fee" class="warn">毛利率必須高於手續費率 {{ fee * 100 }}%，否則每賣一筆都虧，無法損益兩平。</span>
+        <span v-if="m <= fee" class="warn">毛利率必須高於手續費率 {{ fee * 100 }}%，否則每賣一筆都虧，無法損益平衡。</span>
         <template v-else-if="none">未使用金流與電子發票；毛利全部用來攤營運成本。</template>
         <template v-else-if="invOnly">未走線上金流，沒有每筆手續費；毛利全部用來攤固定成本。</template>
         <template v-else>每筆交易先扣 {{ fee * 100 }}% 手續費，剩下 {{ ((m - fee) * 100).toFixed(2) }}% 用來攤固定成本。</template>
@@ -206,7 +206,7 @@ const rows = computed(() =>
           </tr>
         </tbody>
       </table>
-      <p class="note">公式：損益兩平營業額 =（金流發票固定費 + 營運成本）÷（毛利率 − 交易手續費率）。未含 5% 營業稅；可扣抵進項者以未稅計。</p>
+      <p class="note">公式：損益平衡營業額 =（金流發票固定費 + 營運成本）÷（毛利率 − 交易手續費率）。未含 5% 營業稅；可扣抵進項者以未稅計。</p>
     </div>
   </main>
 </template>

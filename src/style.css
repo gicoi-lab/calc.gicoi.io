@@ -34,3 +34,7 @@ tr.pick td{background:#fdf3ea;font-weight:700}
 .reset:hover{background:var(--teal);color:#fff}
 .split{padding:1px 8px;font-size:12px;margin-left:6px}
 .parts{grid-column:1/-1;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));padding:12px;border:1px dashed var(--line);border-radius:6px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand img{flex:none;filter:drop-shadow(0 2px 4px rgba(154,74,26,.25))}
+.brand small{font-size:inherit}
+@media (max-width:640px){.brand img{width:44px;height:44px}.brand{font-size:20px}.brand .colon{display:none}.brand small{display:block;font-size:14px;font-weight:400;color:var(--muted)}}
