@@ -67,17 +67,24 @@ const fee = computed(() => (invOnly.value ? 0 : +feePct.value / 100))
 const m = computed(() =>
   isM.value ? marginPct.value / 100 : price.value > 0 ? (price.value - cost.value) / price.value : 0
 )
-const R = computed(() => breakeven(m.value, fee.value, F.value))
-const P = computed(() => profit(annualRev.value, m.value, fee.value, F.value))
-// 依預估營業額（未稅）與預估獲利估算，不回扣獲利
-const vat = computed(() => (taxable.value ? annualRev.value * vatPct.value / 100 : 0))
-const cit = computed(() => corpTax(P.value))
+// 營業稅視為營收比例成本（不扣抵進項），與手續費一起從毛利扣
+const vatR = computed(() => (taxable.value ? vatPct.value / 100 : 0))
+const cut = computed(() => fee.value + vatR.value)
+const cutPct = computed(() => +(cut.value * 100).toFixed(2))
+const cutText = computed(() =>
+  [fee.value && `${+(fee.value * 100).toFixed(2)}% 手續費`, vatR.value && `${vatPct.value}% 營業稅`].filter(Boolean).join('＋')
+)
+const R = computed(() => breakeven(m.value, cut.value, F.value)) // 平衡點無所得，營所稅為 0
+const vat = computed(() => annualRev.value * vatR.value)
+const preTax = computed(() => profit(annualRev.value, m.value, cut.value, F.value)) // 已扣營業稅
+const cit = computed(() => corpTax(preTax.value))
+const P = computed(() => preTax.value - cit.value)
 const units = computed(() =>
   isFinite(R.value) && price.value > 0 ? Math.ceil(R.value / price.value).toLocaleString() + ' 件' : '—'
 )
 const rows = computed(() =>
   MARGINS.map(p => {
-    const r = breakeven(p / 100, fee.value, F.value)
+    const r = breakeven(p / 100, cut.value, F.value)
     return { p, r, share: isFinite(r) ? ((fee.value + base.value / r) * 100).toFixed(1) + '%' : '—' }
   })
 )
@@ -203,9 +210,9 @@ const rows = computed(() =>
             營所稅：課稅所得 12 萬以下免徵，超過者 20%，稅額不超過超過 12 萬部分之半數（出處：<a href="https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=G0340003&flno=5" target="_blank" rel="noopener">所得稅法第 5 條</a>）。</p>
         </div>
         <div>
-          <h2>預估獲利</h2>
+          <h2>預估獲利（稅後）</h2>
           <div class="big" :class="{ loss: P < 0 }">{{ signedNtd(P) }}</div>
-          <p class="note">以年營業額 {{ ntd(annualRev) }}（月 {{ ntd(annualRev / 12) }}）計，<br/>每月約 {{ signedNtd(P / 12) }}</p>
+          <p class="note">以年營業額 {{ ntd(annualRev) }}（月 {{ ntd(annualRev / 12) }}）計，<br/>每月約 {{ signedNtd(P / 12) }}；稅前（已扣營業稅）{{ signedNtd(preTax) }}</p>
         </div>
       </div>
       <div class="kv" style="margin-top:12px">
@@ -216,24 +223,24 @@ const rows = computed(() =>
         <div v-if="!isM"><b>需賣出件數／年</b><span>{{ units }}</span></div>
       </div>
       <p class="note">
-        <span v-if="m <= fee" class="warn">毛利率必須高於手續費率 {{ fee * 100 }}%，否則每賣一筆都虧，無法損益平衡。</span>
+        <span v-if="m <= cut" class="warn">毛利率必須高於{{ cutText }}（共 {{ cutPct }}%），否則每賣一筆都虧，無法損益平衡。</span>
+        <template v-else-if="cut">每筆營業額先扣 {{ cutText }}，剩下 {{ ((m - cut) * 100).toFixed(2) }}% 用來攤固定成本。</template>
         <template v-else-if="none">未使用金流與電子發票；毛利全部用來攤營運成本。</template>
         <template v-else-if="invOnly">未走線上金流，沒有每筆手續費；毛利全部用來攤固定成本。</template>
-        <template v-else>每筆交易先扣 {{ fee * 100 }}% 手續費，剩下 {{ ((m - fee) * 100).toFixed(2) }}% 用來攤固定成本。</template>
       </p>
     </div>
 
     <div class="card">
-      <h2>毛利率對照（同一組固定成本與手續費率）</h2>
+      <h2>毛利率對照（同一組固定成本、手續費率與營業稅率）</h2>
       <table>
         <thead><tr><th>毛利率</th><th>年營業額</th><th>月營業額</th><th v-if="!none">金流發票費用佔營收</th></tr></thead>
         <tbody>
           <tr v-for="row in rows" :key="row.p" :class="{ pick: isM && row.p === marginPct }">
-            <td>{{ row.p }}%</td><td>{{ ntd(row.r) }}</td><td>{{ ntd(row.r / 12) }}</td><td v-if="!none">{{ row.share }}</td>
+            <td>{{ row.p }}%</td><td v-if="!isFinite(row.r)" :colspan="none ? 2 : 3" class="warn" style="text-align:center">無法平衡</td><template v-else><td>{{ ntd(row.r) }}</td><td>{{ ntd(row.r / 12) }}</td><td v-if="!none">{{ row.share }}</td></template>
           </tr>
         </tbody>
       </table>
-      <p class="note">公式：損益平衡營業額 =（金流發票固定費 + 營運成本）÷（毛利率 − 交易手續費率）。未含 5% 營業稅；可扣抵進項者以未稅計。</p>
+      <p class="note">公式：損益平衡營業額 =（金流發票固定費 + 營運成本）÷（毛利率 − 交易手續費率 − 營業稅率）。營業稅以營業額 × 稅率計為成本（未扣抵進項）；損益平衡時無所得，不產生營所稅。</p>
     </div>
     <footer class="foot">
       <span>＊ Powered by <a href="https://gicoi.io" target="_blank" rel="noopener">GICOI.IO</a></span>
