@@ -6,6 +6,7 @@ export const MARGINS = [10, 20, 30, 40, 50, 60]
 export const breakeven = (m, fee, F) => (m > fee ? F / (m - fee) : Infinity)
 
 export const svcFixed = (year, svc) => {
+  if (svc === 'none') return 0
   const c = COST[year]
   return (svc !== 'pay' ? c.inv : 0) + (svc !== 'inv' ? c.pay : 0)
 }

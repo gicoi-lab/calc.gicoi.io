@@ -57,7 +57,8 @@ const setRevYearly = y => {
 }
 
 const isM = computed(() => mode.value === 'margin')
-const invOnly = computed(() => svc.value === 'inv')
+const none = computed(() => svc.value === 'none')
+const invOnly = computed(() => svc.value === 'inv' || none.value) // 沒走線上金流：無手續費
 const base = computed(() => svcFixed(year.value, svc.value))
 const F = computed(() => base.value + opexTotal.value * 10000 * perYear.value)
 const fee = computed(() => (invOnly.value ? 0 : +feePct.value / 100))
@@ -94,11 +95,12 @@ const rows = computed(() =>
             <option value="both">電子發票＆金流</option>
             <option value="pay">僅金流</option>
             <option value="inv">僅電子發票</option>
+            <option value="none">無（純營運試算）</option>
           </select>
         </div>
         <div>
           <label for="year">計算年度</label>
-          <select id="year" v-model="year">
+          <select id="year" v-model="year" :disabled="none">
             <option value="y1">第一年（含導入費／設定費）</option>
             <option value="y2">第二年起</option>
           </select>
@@ -183,11 +185,12 @@ const rows = computed(() =>
         <div><b>每月營業額（損益兩平）</b><span>{{ ntd(R / 12) }}</span></div>
         <div><b>毛利率</b><span>{{ (m * 100).toFixed(1) }}%</span></div>
         <div><b>年固定成本（金流發票＋營運）</b><span>{{ ntd(F) }}</span></div>
-        <div><b>金流發票固定費／年</b><span>{{ ntd(base) }}</span></div>
+        <div v-if="!none"><b>金流發票固定費／年</b><span>{{ ntd(base) }}</span></div>
         <div v-if="!isM"><b>需賣出件數／年</b><span>{{ units }}</span></div>
       </div>
       <p class="note">
         <span v-if="m <= fee" class="warn">毛利率必須高於手續費率 {{ fee * 100 }}%，否則每賣一筆都虧，無法損益兩平。</span>
+        <template v-else-if="none">未使用金流與電子發票；毛利全部用來攤營運成本。</template>
         <template v-else-if="invOnly">未走線上金流，沒有每筆手續費；毛利全部用來攤固定成本。</template>
         <template v-else>每筆交易先扣 {{ fee * 100 }}% 手續費，剩下 {{ ((m - fee) * 100).toFixed(2) }}% 用來攤固定成本。</template>
       </p>
@@ -196,10 +199,10 @@ const rows = computed(() =>
     <div class="card">
       <h2>毛利率對照（同一組固定成本與手續費率）</h2>
       <table>
-        <thead><tr><th>毛利率</th><th>年營業額</th><th>月營業額</th><th>金流發票費用佔營收</th></tr></thead>
+        <thead><tr><th>毛利率</th><th>年營業額</th><th>月營業額</th><th v-if="!none">金流發票費用佔營收</th></tr></thead>
         <tbody>
           <tr v-for="row in rows" :key="row.p" :class="{ pick: isM && row.p === marginPct }">
-            <td>{{ row.p }}%</td><td>{{ ntd(row.r) }}</td><td>{{ ntd(row.r / 12) }}</td><td>{{ row.share }}</td>
+            <td>{{ row.p }}%</td><td>{{ ntd(row.r) }}</td><td>{{ ntd(row.r / 12) }}</td><td v-if="!none">{{ row.share }}</td>
           </tr>
         </tbody>
       </table>

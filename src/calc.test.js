@@ -6,6 +6,7 @@ test('svcFixed', () => {
   assert.equal(svcFixed('y1', 'both'), 24600)
   assert.equal(svcFixed('y2', 'pay'), 8000)
   assert.equal(svcFixed('y2', 'inv'), 9600)
+  assert.equal(svcFixed('y1', 'none'), 0)
 })
 
 test('breakeven', () => {
