@@ -4,5 +4,6 @@
   "compatibility_date": "2026-11-01",
   // 純靜態站：只上傳 vite build 產物，不需要 Worker script
   "assets": { "directory": "./dist" },
+  "workers_dev": true,
   "routes": [{ "pattern": "calc.gicoi.io", "custom_domain": true }]
 }
