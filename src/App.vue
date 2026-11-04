@@ -113,7 +113,7 @@ const rows = computed(() =>
           </select>
         </div>
         <div>
-          <label for="opex">營運成本（水電、房租、人事薪資）萬／{{ unit }}
+          <label for="opex">營運成本（萬／{{ unit }}）
             <button class="reset split" @click="toggleSplit">{{ opexSplit ? '合併算' : '分開算' }}</button>
           </label>
           <input v-if="opexSplit" id="opex" :value="opexTotal" type="number" readonly>
@@ -121,7 +121,7 @@ const rows = computed(() =>
         </div>
         <div v-if="opexSplit" class="grid parts">
           <div v-for="n in OPEX_ITEMS" :key="n">
-            <label :for="'opex-' + n">{{ n }} 萬／{{ unit }}</label>
+            <label :for="'opex-' + n">{{ n }}</label>
             <input :id="'opex-' + n" v-model.number="opexParts[n]" type="number" min="0" step="0.1">
           </div>
         </div>
