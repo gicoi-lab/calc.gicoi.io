@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>損益兩平試算</title>
+<style>
+:root{--bg:#F4F1EA;--card:#fff;--ink:#1B2430;--muted:#6b6f76;--accent:#9A4A1A;--teal:#2D6A6E;--line:#ddd8cc}
+*{box-sizing:border-box}
+body{margin:0;padding:24px 16px;background:var(--bg);color:var(--ink);font:15px/1.5 "PingFang TC","Microsoft JhengHei",sans-serif}
+main{max-width:860px;margin:0 auto}
+h1{font-size:24px;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 20px;font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px}
+.card h2{font-size:14px;color:var(--accent);margin:0 0 12px;letter-spacing:.05em}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 20px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+input,select{width:100%;padding:8px 10px;font:inherit;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)}
+.seg{display:inline-flex;border:1px solid var(--teal);border-radius:6px;overflow:hidden;margin-bottom:12px}
+.seg button{border:0;background:#fff;color:var(--teal);padding:8px 18px;font:inherit;cursor:pointer}
+.seg button.on{background:var(--teal);color:#fff}
+.hide{display:none}
+.big{font-size:32px;font-weight:700;color:var(--accent)}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.kv div{padding:12px;background:var(--bg);border-radius:8px}
+.kv b{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.kv span{font-size:20px;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{background:#CFE2F3;font-weight:600}
+tr.pick td{background:#fdf3ea;font-weight:700}
+.warn{color:#b3261e;font-weight:600}
+.note{font-size:12px;color:var(--muted);margin-top:10px}
+</style>
+</head>
+<body><main>
+<h1>線上金流＋電子發票：損益兩平試算</h1>
+<p class="sub">費率依 2026/11/04 金流商公版報價單（未稅）。每筆交易都走線上金流並開立電子發票。</p>
+
+<div class="card">
+<h2>固定成本</h2>
+<div class="grid">
+ <div><label>採用服務</label><select id="svc"><option value="both">電子發票＆金流</option><option value="pay">僅金流</option><option value="inv">僅電子發票</option></select></div>
+ <div><label>計算年度</label><select id="year"><option value="y1">第一年（含導入費／設定費）</option><option value="y2">第二年起</option></select></div>
+ <div><label>營運成本（水電、房租、人事薪資）萬／年</label><input id="opex" type="number" min="0" step="1" value="0"></div>
+ <div><label>平均交易手續費率 %</label><select id="fee"><option value="2.5">2.5（國內信用卡／Apple Pay／街口）</option><option value="2.51">2.51（LINE Pay 含閘道費）</option><option value="3.5">3.5（國外信用卡）</option><option value="1">1（WebATM／虛擬帳號，每筆最低 15 元）</option></select></div>
+</div>
+</div>
+
+<div class="card">
+<h2>試算模式</h2>
+<div class="seg"><button id="bMargin" class="on">毛利率</button><button id="bItem">商品服務</button></div>
+<div id="pMargin" class="grid">
+ <div><label>商品服務毛利率 %</label><select id="margin"><option>10</option><option>20</option><option selected>30</option><option>40</option><option>50</option><option>60</option></select></div>
+</div>
+<div id="pItem" class="grid hide">
+ <div><label>商品服務成本（元／件）</label><input id="cost" type="number" min="0" step="1" value="700"></div>
+ <div><label>商品服務單價（元／件）</label><input id="price" type="number" min="0" step="1" value="1000"></div>
+</div>
+</div>
+
+<div class="card">
+<h2>目標損益兩平營業額</h2>
+<div class="big" id="be">—</div>
+<div class="kv" style="margin-top:12px">
+ <div><b>每月營業額</b><span id="beMonth">—</span></div>
+ <div><b>實際毛利率</b><span id="mEff">—</span></div>
+ <div><b>年固定成本（金流發票＋營運）</b><span id="fixed">—</span></div>
+ <div><b>金流發票固定費／年</b><span id="svcFee">—</span></div>
+ <div id="unitsBox" class="hide"><b>需賣出件數／年</b><span id="units">—</span></div>
+</div>
+<p class="note" id="msg"></p>
+</div>
+
+<div class="card">
+<h2>毛利率對照（同一組固定成本與手續費率）</h2>
+<table><thead><tr><th>毛利率</th><th>年營業額</th><th>月營業額</th><th>金流發票費用佔營收</th></tr></thead><tbody id="tbl"></tbody></table>
+<p class="note">公式：損益兩平營業額 =（金流發票固定費 + 營運成本）÷（毛利率 − 交易手續費率）。未含 5% 營業稅；可扣抵進項者以未稅計。</p>
+</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const ntd=n=>isFinite(n)&&n>=0?'NT$ '+Math.round(n).toLocaleString():'—';
+let mode='margin';
+$('bMargin').onclick=()=>{mode='margin';render()};
+$('bItem').onclick=()=>{mode='item';render()};
+document.querySelectorAll('input,select').forEach(e=>e.addEventListener('input',render));
+function breakeven(m,fee,F){return m>fee?F/(m-fee):Infinity}
+// 未稅：發票 導入 3000 + 800×12；金流 設定 4000 + 年費 8000
+const COST={y1:{inv:12600,pay:12000},y2:{inv:9600,pay:8000}};
+function svcFixed(){const c=COST[$('year').value],v=$('svc').value;return (v!=='pay'?c.inv:0)+(v!=='inv'?c.pay:0)}
+function render(){
+ const isM=mode==='margin';
+ $('bMargin').classList.toggle('on',isM);$('bItem').classList.toggle('on',!isM);
+ $('pMargin').classList.toggle('hide',!isM);$('pItem').classList.toggle('hide',isM);
+ $('unitsBox').classList.toggle('hide',isM);
+ const invOnly=$('svc').value==='inv';
+ $('fee').disabled=invOnly;
+ const base=svcFixed();
+ const F=base+(+$('opex').value||0)*10000;
+ const fee=invOnly?0:+$('fee').value/100;
+ $('svcFee').textContent=ntd(base);
+ let m,price=+$('price').value,cost=+$('cost').value;
+ if(isM) m=+$('margin').value/100; else m=price>0?(price-cost)/price:0;
+ const R=breakeven(m,fee,F);
+ $('be').textContent=ntd(R);
+ $('beMonth').textContent=ntd(R/12);
+ $('mEff').textContent=(m*100).toFixed(1)+'%';
+ $('fixed').textContent=ntd(F);
+ $('units').textContent=isFinite(R)&&price>0?Math.ceil(R/price).toLocaleString()+' 件':'—';
+ $('msg').innerHTML=m<=fee?'<span class="warn">毛利率必須高於手續費率 '+(fee*100)+'%，否則每賣一筆都虧，無法損益兩平。</span>':invOnly?'未走線上金流，沒有每筆手續費；毛利全部用來攤固定成本。':
+  '每筆交易先扣 '+(fee*100)+'% 手續費，剩下 '+((m-fee)*100).toFixed(2)+'% 用來攤固定成本。';
+ const sel=isM?+$('margin').value:null;
+ $('tbl').innerHTML=[10,20,30,40,50,60].map(p=>{const r=breakeven(p/100,fee,F);
+  return `<tr class="${p===sel?'pick':''}"><td>${p}%</td><td>${ntd(r)}</td><td>${ntd(r/12)}</td><td>${isFinite(r)?((fee+base/r)*100).toFixed(1)+'%':'—'}</td></tr>`}).join('');
+}
+render();
+</script>
+</body></html>
