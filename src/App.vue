@@ -199,7 +199,7 @@ const rows = computed(() =>
     <div class="card">
       <div class="cols">
         <div>
-          <h2>目標損益平衡營業額</h2>
+          <h2>目標損益平衡年營業額</h2>
           <div class="big">{{ ntd(R) }}</div>
           <div class="kv" style="margin-top:12px">
             <div><b>營業稅／年</b><span>{{ taxable ? ntd(vat) : '免稅' }}</span></div>
