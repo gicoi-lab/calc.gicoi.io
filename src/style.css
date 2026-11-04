@@ -38,3 +38,9 @@ tr.pick td{background:#fdf3ea;font-weight:700}
 .brand img{flex:none;filter:drop-shadow(0 2px 4px rgba(154,74,26,.25))}
 .brand small{font-size:inherit}
 @media (max-width:640px){.brand img{width:44px;height:44px}.brand{font-size:20px}.brand .colon{display:none}.brand small{display:block;font-size:14px;font-weight:400;color:var(--muted)}}
+.foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px 16px;margin-top:24px;padding-top:14px;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.foot a{color:var(--teal)}
+.foot-meta{display:inline-flex;align-items:center;gap:12px;white-space:nowrap}
+.foot .issue{display:inline-flex;align-items:center;gap:6px;border-radius:999px;text-decoration:none}
+.foot .issue:hover{color:#fff}
+@media (max-width:575.98px){.foot{flex-direction:column;text-align:center}}
