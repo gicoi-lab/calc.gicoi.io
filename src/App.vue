@@ -128,7 +128,7 @@ const rows = computed(() =>
         <div>
           <h2>獲利</h2>
           <div class="big" :class="{ loss: P < 0 }">{{ signedNtd(P) }}</div>
-          <p class="note">以年營業額 {{ ntd(annualRev) }}（月 {{ ntd(annualRev / 12) }}）計，每月約 {{ signedNtd(P / 12) }}</p>
+          <p class="note">以年營業額 {{ ntd(annualRev) }}（月 {{ ntd(annualRev / 12) }}）計，<br/>每月約 {{ signedNtd(P / 12) }}</p>
         </div>
       </div>
       <div class="kv" style="margin-top:12px">
