@@ -44,3 +44,4 @@ tr.pick td{background:#fdf3ea;font-weight:700}
 .foot .issue{display:inline-flex;align-items:center;gap:6px;border-radius:999px;text-decoration:none}
 .foot .issue:hover{color:#fff}
 @media (max-width:575.98px){.foot{flex-direction:column;text-align:center}}
+@media (min-width:641px){.c3{grid-template-columns:repeat(3,1fr)}}

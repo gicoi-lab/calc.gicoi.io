@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { MARGINS, breakeven, svcFixed, ntd, profit, signedNtd } from './calc.js'
+import { MARGINS, breakeven, svcFixed, ntd, profit, signedNtd, corpTax } from './calc.js'
 
 // 輸入值存在 localStorage；隱私模式等無法存取時退回預設值
 const defaults = []
@@ -28,6 +28,8 @@ const cost = saved('cost', 700)
 const price = saved('price', 1000)
 const revenue = saved('revenue', 30) // 萬
 const revYearly = saved('revYearly', false)
+const taxable = saved('taxable', true)
+const vatPct = saved('vatPct', 5)
 // 營運成本分項（萬，單位同 opex）
 const OPEX_ITEMS = ['房租', '水電', '人事', '網路', '記帳', '系統服務（訂閱）', '廣告行銷', '其他']
 const opexSplit = saved('opexSplit', false)
@@ -67,6 +69,9 @@ const m = computed(() =>
 )
 const R = computed(() => breakeven(m.value, fee.value, F.value))
 const P = computed(() => profit(annualRev.value, m.value, fee.value, F.value))
+// 依預估營業額（未稅）與預估獲利估算，不回扣獲利
+const vat = computed(() => (taxable.value ? annualRev.value * vatPct.value / 100 : 0))
+const cit = computed(() => corpTax(P.value))
 const units = computed(() =>
   isFinite(R.value) && price.value > 0 ? Math.ceil(R.value / price.value).toLocaleString() + ' 件' : '—'
 )
@@ -131,7 +136,7 @@ const rows = computed(() =>
     </div>
 
     <div class="card">
-      <div class="cols">
+      <div class="cols c3">
         <div>
           <h2>試算模式</h2>
           <div class="seg">
@@ -158,6 +163,21 @@ const rows = computed(() =>
           </div>
         </div>
         <div>
+          <h2>營業稅</h2>
+          <div class="seg">
+            <button :class="{ on: !taxable }" @click="taxable = false">免稅</button>
+            <button :class="{ on: taxable }" @click="taxable = true">應稅</button>
+          </div>
+          <label for="vat">營業稅率 %</label>
+          <select id="vat" v-model.number="vatPct" :disabled="!taxable">
+            <option :value="1">1（小規模營業人）</option>
+            <option :value="2">2</option>
+            <option :value="3">3</option>
+            <option :value="4">4</option>
+            <option :value="5">5（一般營業人）</option>
+          </select>
+        </div>
+        <div>
           <h2>估算營業額</h2>
           <div class="seg">
             <button :class="{ on: revYearly }" @click="setRevYearly(true)">年營業額</button>
@@ -174,6 +194,13 @@ const rows = computed(() =>
         <div>
           <h2>目標損益平衡營業額</h2>
           <div class="big">{{ ntd(R) }}</div>
+          <div class="kv" style="margin-top:12px">
+            <div><b>營業稅／年</b><span>{{ taxable ? ntd(vat) : '免稅' }}</span></div>
+            <div><b>營所稅／年</b><span>{{ ntd(cit) }}</span></div>
+          </div>
+          <p class="note">依預估營業額與獲利估算，僅供參考，實際以國稅局核定為準。
+            <br>
+            營所稅：課稅所得 12 萬以下免徵，超過者 20%，稅額不超過超過 12 萬部分之半數（出處：<a href="https://law.moj.gov.tw/LawClass/LawSingle.aspx?pcode=G0340003&flno=5" target="_blank" rel="noopener">所得稅法第 5 條</a>）。</p>
         </div>
         <div>
           <h2>預估獲利</h2>

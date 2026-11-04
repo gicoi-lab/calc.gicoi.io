@@ -21,3 +21,12 @@ test('profit is zero at breakeven, sign flips around it', async () => {
   assert.equal(Math.round(profit(1000000, 0.3, 0.025, 24600)), 250400)
   assert.equal(profit(0, 0.3, 0.025, 24600), -24600)
 })
+
+test('corpTax', async () => {
+  const { corpTax } = await import('./calc.js')
+  assert.equal(corpTax(-5000), 0)
+  assert.equal(corpTax(120000), 0)
+  assert.equal(corpTax(150000), 15000) // 半數上限
+  assert.equal(corpTax(200000), 40000) // 兩式交會
+  assert.equal(corpTax(1000000), 200000)
+})

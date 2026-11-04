@@ -17,3 +17,6 @@ export const ntd = n => (isFinite(n) && n >= 0 ? 'NT$ ' + Math.round(n).toLocale
 export const profit = (rev, m, fee, F) => rev * (m - fee) - F
 
 export const signedNtd = n => (n < 0 ? '−' : '') + 'NT$ ' + Math.round(Math.abs(n)).toLocaleString()
+
+// 營所稅（所得稅法§5）：課稅所得 ≤12 萬免徵；超過者 20%，但稅額不超過（所得 − 12 萬）÷ 2
+export const corpTax = i => (i > 120000 ? Math.min(i * 0.2, (i - 120000) / 2) : 0)
