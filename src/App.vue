@@ -84,7 +84,7 @@ const rows = computed(() =>
       <h1 class="brand"><img src="/favicon-192.png" alt="" width="52" height="52"><span>開店損益試算<span class="colon">：</span><small>營業額要做多少才賺錢</small></span></h1>
       <button class="reset" @click="reset">重設為預設值</button>
     </div>
-    <p class="sub">輸入營運成本、毛利率與預估營業額，算出損益平衡點與獲利。可加入線上金流與電子發票費用（費率依 2026/11/04 金流商公版報價單，未稅）。</p>
+    <p class="sub">輸入營運成本、毛利率與預估營業額，算出損益平衡點與獲利。可加入線上金流與電子發票費用（2026/11/04 費率，未稅）。</p>
 
     <div class="card">
       <h2>固定成本</h2>
