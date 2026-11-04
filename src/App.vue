@@ -1,17 +1,30 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { MARGINS, breakeven, svcFixed, ntd, profit, signedNtd } from './calc.js'
 
-const svc = ref('both')
-const year = ref('y1')
-const opex = ref(0)
-const feePct = ref('2.5')
-const mode = ref('margin')
-const marginPct = ref(30)
-const cost = ref(700)
-const price = ref(1000)
-const revenue = ref(10) // 萬
-const revYearly = ref(false)
+// 輸入值存在 localStorage；隱私模式等無法存取時退回預設值
+const saved = (key, init) => {
+  try {
+    const s = localStorage.getItem('calc:' + key)
+    if (s !== null) init = JSON.parse(s)
+  } catch {}
+  const r = ref(init)
+  watch(r, v => {
+    try { localStorage.setItem('calc:' + key, JSON.stringify(v)) } catch {}
+  })
+  return r
+}
+
+const svc = saved('svc', 'both')
+const year = saved('year', 'y1')
+const opex = saved('opex', 60)
+const feePct = saved('feePct', '2.5')
+const mode = saved('mode', 'margin')
+const marginPct = saved('marginPct', 30)
+const cost = saved('cost', 700)
+const price = saved('price', 1000)
+const revenue = saved('revenue', 10) // 萬
+const revYearly = saved('revYearly', false)
 const annualRev = computed(() => (+revenue.value || 0) * 10000 * (revYearly.value ? 1 : 12))
 // 切換年／月時換算數值，維持同一個營業規模
 const setRevYearly = y => {
