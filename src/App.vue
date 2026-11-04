@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { MARGINS, breakeven, svcFixed, ntd } from './calc.js'
+import { MARGINS, breakeven, svcFixed, ntd, profit, signedNtd } from './calc.js'
 
 const svc = ref('both')
 const year = ref('y1')
@@ -10,6 +10,7 @@ const mode = ref('margin')
 const marginPct = ref(30)
 const cost = ref(700)
 const price = ref(1000)
+const revenue = ref(1000000)
 
 const isM = computed(() => mode.value === 'margin')
 const invOnly = computed(() => svc.value === 'inv')
@@ -20,6 +21,7 @@ const m = computed(() =>
   isM.value ? marginPct.value / 100 : price.value > 0 ? (price.value - cost.value) / price.value : 0
 )
 const R = computed(() => breakeven(m.value, fee.value, F.value))
+const P = computed(() => profit(+revenue.value || 0, m.value, fee.value, F.value))
 const units = computed(() =>
   isFinite(R.value) && price.value > 0 ? Math.ceil(R.value / price.value).toLocaleString() + ' 件' : '—'
 )
@@ -71,34 +73,52 @@ const rows = computed(() =>
     </div>
 
     <div class="card">
-      <h2>試算模式</h2>
-      <div class="seg">
-        <button :class="{ on: isM }" @click="mode = 'margin'">毛利率</button>
-        <button :class="{ on: !isM }" @click="mode = 'item'">商品服務</button>
-      </div>
-      <div v-if="isM" class="grid">
+      <div class="cols">
         <div>
-          <label for="margin">商品服務毛利率 %</label>
-          <select id="margin" v-model.number="marginPct">
-            <option v-for="p in MARGINS" :key="p" :value="p">{{ p }}</option>
-          </select>
+          <h2>試算模式</h2>
+          <div class="seg">
+            <button :class="{ on: isM }" @click="mode = 'margin'">毛利率</button>
+            <button :class="{ on: !isM }" @click="mode = 'item'">商品服務</button>
+          </div>
+          <div v-if="isM" class="grid">
+            <div>
+              <label for="margin">商品服務毛利率 %</label>
+              <select id="margin" v-model.number="marginPct">
+                <option v-for="p in MARGINS" :key="p" :value="p">{{ p }}</option>
+              </select>
+            </div>
+          </div>
+          <div v-else class="grid">
+            <div>
+              <label for="cost">商品服務成本（元／件）</label>
+              <input id="cost" v-model.number="cost" type="number" min="0" step="1">
+            </div>
+            <div>
+              <label for="price">商品服務單價（元／件）</label>
+              <input id="price" v-model.number="price" type="number" min="0" step="1">
+            </div>
+          </div>
         </div>
-      </div>
-      <div v-else class="grid">
         <div>
-          <label for="cost">商品服務成本（元／件）</label>
-          <input id="cost" v-model.number="cost" type="number" min="0" step="1">
-        </div>
-        <div>
-          <label for="price">商品服務單價（元／件）</label>
-          <input id="price" v-model.number="price" type="number" min="0" step="1">
+          <h2>估算營業額</h2>
+          <label for="revenue">預估年營業額（元／年）</label>
+          <input id="revenue" v-model.number="revenue" type="number" min="0" step="10000">
         </div>
       </div>
     </div>
 
     <div class="card">
-      <h2>目標損益兩平營業額</h2>
-      <div class="big">{{ ntd(R) }}</div>
+      <div class="cols">
+        <div>
+          <h2>目標損益兩平營業額</h2>
+          <div class="big">{{ ntd(R) }}</div>
+        </div>
+        <div>
+          <h2>獲利</h2>
+          <div class="big" :class="{ loss: P < 0 }">{{ signedNtd(P) }}</div>
+          <p class="note">以估算營業額 {{ ntd(+revenue || 0) }}／年計，每月約 {{ signedNtd(P / 12) }}</p>
+        </div>
+      </div>
       <div class="kv" style="margin-top:12px">
         <div><b>每月營業額</b><span>{{ ntd(R / 12) }}</span></div>
         <div><b>實際毛利率</b><span>{{ (m * 100).toFixed(1) }}%</span></div>

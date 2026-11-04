@@ -11,3 +11,8 @@ export const svcFixed = (year, svc) => {
 }
 
 export const ntd = n => (isFinite(n) && n >= 0 ? 'NT$ ' + Math.round(n).toLocaleString() : '—')
+
+// 獲利 = 營業額 ×（毛利率 − 手續費率）− 年固定成本
+export const profit = (rev, m, fee, F) => rev * (m - fee) - F
+
+export const signedNtd = n => (n < 0 ? '−' : '') + 'NT$ ' + Math.round(Math.abs(n)).toLocaleString()
