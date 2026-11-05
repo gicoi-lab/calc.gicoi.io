@@ -20,3 +20,16 @@ export const signedNtd = n => (n < 0 ? '−' : '') + 'NT$ ' + Math.round(Math.ab
 
 // 營所稅（所得稅法§5）：課稅所得 ≤12 萬免徵；超過者 20%，但稅額不超過（所得 − 12 萬）÷ 2
 export const corpTax = i => (i > 120000 ? Math.min(i * 0.2, (i - 120000) / 2) : 0)
+
+// 稅後獲利：pre 已扣營業稅（cut 含營業稅率），再扣營所稅
+export const afterTax = (rev, m, cut, F) => {
+  const pre = profit(rev, m, cut, F)
+  const cit = corpTax(pre)
+  return { pre, cit, net: pre - cit }
+}
+
+// 年／月切換換算，保留兩位小數；空值視為 0
+export const scale = (v, k) => Math.round((+v || 0) * k * 100) / 100
+
+// 營運成本分項加總，保留兩位小數（避免 0.1 + 0.2 之類的浮點誤差）
+export const sumParts = (parts, items) => Math.round(items.reduce((a, k) => a + (+parts[k] || 0), 0) * 100) / 100

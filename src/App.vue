@@ -1,22 +1,9 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { MARGINS, breakeven, svcFixed, ntd, profit, signedNtd, corpTax } from './calc.js'
+import { computed } from 'vue'
+import { MARGINS, breakeven, svcFixed, ntd, signedNtd, afterTax, scale, sumParts } from './calc.js'
+import { createStore } from './saved.js'
 
-// 輸入值存在 localStorage；隱私模式等無法存取時退回預設值
-const defaults = []
-const saved = (key, init) => {
-  const init0 = init
-  try {
-    const s = localStorage.getItem('calc:' + key)
-    if (s !== null) init = JSON.parse(s)
-  } catch {}
-  const r = ref(init)
-  defaults.push([r, init0])
-  watch(r, v => {
-    try { localStorage.setItem('calc:' + key, JSON.stringify(v)) } catch {}
-  }, { deep: true })
-  return r
-}
+const { saved, reset } = createStore()
 
 const svc = saved('svc', 'both')
 const year = saved('year', 'y1')
@@ -34,7 +21,7 @@ const vatPct = saved('vatPct', 5)
 const OPEX_ITEMS = ['房租', '水電', '人事', '網路', '記帳', '系統服務（訂閱）', '廣告行銷', '其他']
 const opexSplit = saved('opexSplit', false)
 const opexParts = saved('opexParts', Object.fromEntries(OPEX_ITEMS.map(k => [k, 0])))
-const partsSum = () => Math.round(OPEX_ITEMS.reduce((a, k) => a + (+opexParts.value[k] || 0), 0) * 100) / 100
+const partsSum = () => sumParts(opexParts.value, OPEX_ITEMS)
 const opexTotal = computed(() => (opexSplit.value ? partsSum() : +opex.value || 0))
 // 展開時若分項全空，先把原總額放進「其他」；收合時總額帶回單一欄位
 const toggleSplit = () => {
@@ -42,7 +29,6 @@ const toggleSplit = () => {
   else if (!partsSum()) opexParts.value['其他'] = +opex.value || 0
   opexSplit.value = !opexSplit.value
 }
-const reset = () => defaults.forEach(([r, d]) => (r.value = structuredClone(d)))
 
 // 營業額與營運成本共用年／月單位（萬）
 const perYear = computed(() => (revYearly.value ? 1 : 12))
@@ -52,9 +38,9 @@ const unit = computed(() => (revYearly.value ? '年' : '月'))
 const setRevYearly = y => {
   if (y === revYearly.value) return
   const k = y ? 12 : 1 / 12
-  revenue.value = Math.round((+revenue.value || 0) * k * 100) / 100
-  opex.value = Math.round((+opex.value || 0) * k * 100) / 100
-  for (const n of OPEX_ITEMS) opexParts.value[n] = Math.round((+opexParts.value[n] || 0) * k * 100) / 100
+  revenue.value = scale(revenue.value, k)
+  opex.value = scale(opex.value, k)
+  for (const n of OPEX_ITEMS) opexParts.value[n] = scale(opexParts.value[n], k)
   revYearly.value = y
 }
 
@@ -76,9 +62,10 @@ const cutText = computed(() =>
 )
 const R = computed(() => breakeven(m.value, cut.value, F.value)) // 平衡點無所得，營所稅為 0
 const vat = computed(() => annualRev.value * vatR.value)
-const preTax = computed(() => profit(annualRev.value, m.value, cut.value, F.value)) // 已扣營業稅
-const cit = computed(() => corpTax(preTax.value))
-const P = computed(() => preTax.value - cit.value)
+const tax = computed(() => afterTax(annualRev.value, m.value, cut.value, F.value))
+const preTax = computed(() => tax.value.pre)
+const cit = computed(() => tax.value.cit)
+const P = computed(() => tax.value.net)
 const units = computed(() =>
   isFinite(R.value) && price.value > 0 ? Math.ceil(R.value / price.value).toLocaleString() + ' 件' : '—'
 )
